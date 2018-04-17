@@ -1,0 +1,25 @@
+[package]
+authors = ["David Flemström <david.flemstrom@gmail.com>"]
+name = "type-info-derive"
+version = "0.1.0"
+
+[dependencies]
+proc-macro2 = "0.3.6"
+quote = "0.5.1"
+syn = "0.13.1"
+
+[dependencies.type-info]
+optional = false
+path = ".."
+
+[dev-dependencies]
+
+[dev-dependencies.syn]
+features = ["full"]
+version = "0.13.1"
+
+[features]
+nightly = ["proc-macro2/nightly"]
+
+[lib]
+proc-macro = true
