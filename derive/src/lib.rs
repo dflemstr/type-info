@@ -1,3 +1,6 @@
+//! A procedural macro for deriving `TypeInfo` for any type.
+//!
+//! See the `type-info` crate for more information as to what this means.
 #![feature(const_type_id)]
 #![recursion_limit = "128"]
 
@@ -37,6 +40,7 @@ enum MetaFieldId<'a> {
     Named(&'a syn::Ident),
 }
 
+/// Derive the `TypeInfo` and `DynamicTypeInfo` traits for a given type.
 #[proc_macro_derive(TypeInfo, attributes(type_info))]
 pub fn type_info(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let ast = syn::parse(input).unwrap();

@@ -26,8 +26,14 @@ mod tests {
             bar: 3,
         };
 
-        assert_eq!(Some(&"hello".to_owned()), simple.field::<String>(type_info::FieldId::Named("foo")));
-        assert_eq!(Some(&3), simple.field::<i32>(type_info::FieldId::Named("bar")));
+        assert_eq!(
+            Some(&"hello".to_owned()),
+            simple.field::<String>(type_info::FieldId::Named("foo"))
+        );
+        assert_eq!(
+            Some(&3),
+            simple.field::<i32>(type_info::FieldId::Named("bar"))
+        );
     }
 
     #[test]
@@ -39,8 +45,14 @@ mod tests {
             bar: 3,
         };
 
-        assert_eq!(Some(&mut "hello".to_owned()), simple.field_mut::<String>(type_info::FieldId::Named("foo")));
-        assert_eq!(Some(&mut 3), simple.field_mut::<i32>(type_info::FieldId::Named("bar")));
+        assert_eq!(
+            Some(&mut "hello".to_owned()),
+            simple.field_mut::<String>(type_info::FieldId::Named("foo"))
+        );
+        assert_eq!(
+            Some(&mut 3),
+            simple.field_mut::<i32>(type_info::FieldId::Named("bar"))
+        );
     }
 
     #[test]
@@ -53,7 +65,10 @@ mod tests {
         };
 
         assert_eq!(None, simple.field::<i32>(type_info::FieldId::Named("foo")));
-        assert_eq!(None, simple.field::<String>(type_info::FieldId::Named("bar")));
+        assert_eq!(
+            None,
+            simple.field::<String>(type_info::FieldId::Named("bar"))
+        );
     }
 
     #[test]
@@ -65,7 +80,10 @@ mod tests {
             bar: 3,
         };
 
-        assert_eq!(None, simple.field::<String>(type_info::FieldId::Named("foo3")));
+        assert_eq!(
+            None,
+            simple.field::<String>(type_info::FieldId::Named("foo3"))
+        );
         assert_eq!(None, simple.field::<i32>(type_info::FieldId::Named("bar3")));
     }
 
@@ -75,8 +93,14 @@ mod tests {
 
         let simple = super::SimpleUnnamed("hello".to_owned(), 3);
 
-        assert_eq!(Some(&"hello".to_owned()), simple.field::<String>(type_info::FieldId::Unnamed(0)));
-        assert_eq!(Some(&3), simple.field::<i32>(type_info::FieldId::Unnamed(1)));
+        assert_eq!(
+            Some(&"hello".to_owned()),
+            simple.field::<String>(type_info::FieldId::Unnamed(0))
+        );
+        assert_eq!(
+            Some(&3),
+            simple.field::<i32>(type_info::FieldId::Unnamed(1))
+        );
     }
 
     #[test]
@@ -85,8 +109,14 @@ mod tests {
 
         let mut simple = super::SimpleUnnamed("hello".to_owned(), 3);
 
-        assert_eq!(Some(&mut "hello".to_owned()), simple.field_mut::<String>(type_info::FieldId::Unnamed(0)));
-        assert_eq!(Some(&mut 3), simple.field_mut::<i32>(type_info::FieldId::Unnamed(1)));
+        assert_eq!(
+            Some(&mut "hello".to_owned()),
+            simple.field_mut::<String>(type_info::FieldId::Unnamed(0))
+        );
+        assert_eq!(
+            Some(&mut 3),
+            simple.field_mut::<i32>(type_info::FieldId::Unnamed(1))
+        );
     }
 
     #[test]
