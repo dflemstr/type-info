@@ -3,16 +3,32 @@
 #![feature(specialization)]
 
 use std::any;
+use std::fmt;
 
 pub type TypeId = any::TypeId;
 
-pub enum FieldId {
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Hash)]
+pub enum FieldId<'a> {
     Unnamed(usize),
-    Named(&'static str),
+    Named(&'a str),
 }
 
 pub trait TypeInfo: DynamicTypeInfo {
     const TYPE: Type;
+
+    fn field<A>(&self, id: FieldId) -> Option<&A>
+    where
+        A: any::Any,
+    {
+        panic!("no such field id: {}", id)
+    }
+
+    fn field_mut<A>(&mut self, id: FieldId) -> Option<&mut A>
+    where
+        A: any::Any,
+    {
+        panic!("no such field id: {}", id)
+    }
 }
 
 pub trait DynamicTypeInfo {
@@ -34,6 +50,7 @@ where
     const TRY_TYPE: Option<&'static Type> = Some(&T::TYPE);
 }
 
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Type {
     pub id: TypeId,
     pub module: &'static str,
@@ -41,6 +58,7 @@ pub struct Type {
     pub data: Data,
 }
 
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Data {
     Primitive,
     Struct(DataStruct),
@@ -48,41 +66,58 @@ pub enum Data {
     Union(DataUnion),
 }
 
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct DataStruct {
     pub fields: Fields,
 }
 
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct DataEnum {
     pub variants: &'static [Variant],
 }
 
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct DataUnion {
     pub fields: FieldsNamed,
 }
 
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Variant {
     pub ident: &'static str,
     pub fields: Fields,
 }
 
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Fields {
     Named(FieldsNamed),
     Unnamed(FieldsUnnamed),
     Unit,
 }
 
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct FieldsNamed {
     pub named: &'static [Field],
 }
 
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct FieldsUnnamed {
     pub unnamed: &'static [Field],
 }
 
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Field {
-    pub id: FieldId,
+    pub id: FieldId<'static>,
     pub ident: Option<&'static str>,
     pub ty: Option<&'static Type>,
+}
+
+impl<'a> fmt::Display for FieldId<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            FieldId::Unnamed(idx) => idx.fmt(f),
+            FieldId::Named(name) => name.fmt(f),
+        }
+    }
 }
 
 macro_rules! impl_primitive {

@@ -1,0 +1,14 @@
+[package]
+authors = ["David Flemström <david.flemstrom@gmail.com>"]
+name = "example"
+version = "0.1.0"
+
+[dependencies]
+
+[dependencies.type-info]
+optional = false
+path = ".."
+
+[dependencies.type-info-derive]
+optional = false
+path = "../derive"
