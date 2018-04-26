@@ -8,6 +8,7 @@ extern crate proc_macro;
 extern crate proc_macro2;
 #[macro_use]
 extern crate quote;
+#[macro_use]
 extern crate syn;
 #[cfg(test)]
 extern crate type_info;
@@ -216,10 +217,7 @@ fn add_static(generics: &mut syn::Generics) {
         }
         type_param
             .bounds
-            .push_value(syn::TypeParamBound::Lifetime(syn::Lifetime::new(
-                "'static",
-                proc_macro2::Span::call_site(),
-            )));
+            .push_value(syn::TypeParamBound::Trait(parse_quote!(::std::any::Any)));
     }
 }
 

@@ -236,7 +236,7 @@ fn test_struct_named_fields_generics() {
             }
         }
         expands to {
-            impl<A: 'static> ::type_info::TypeInfo for Simple<A> {
+            impl<A: ::std::any::Any> ::type_info::TypeInfo for Simple<A> {
                 const TYPE: ::type_info::Type = ::type_info::Type {
                     id: ::type_info::TypeId::of::<Simple<A>>(),
                     module: module_path!(),
@@ -287,7 +287,7 @@ fn test_struct_named_fields_generics() {
                     }
                 }
             }
-            impl<A: 'static> ::type_info::DynamicTypeInfo for Simple<A> {
+            impl<A: ::std::any::Any> ::type_info::DynamicTypeInfo for Simple<A> {
                 fn type_ref(&self) -> &'static ::type_info::Type {
                     &<Self as ::type_info::TypeInfo>::TYPE
                 }
@@ -317,7 +317,7 @@ fn test_struct_unnamed_fields_generics() {
             struct Simple<A>(A, u32);
         }
         expands to {
-            impl<A: 'static> ::type_info::TypeInfo for Simple<A> {
+            impl<A: ::std::any::Any> ::type_info::TypeInfo for Simple<A> {
                 const TYPE: ::type_info::Type = ::type_info::Type {
                     id: ::type_info::TypeId::of::<Simple<A>>(),
                     module: module_path!(),
@@ -368,7 +368,7 @@ fn test_struct_unnamed_fields_generics() {
                     }
                 }
             }
-            impl<A: 'static> ::type_info::DynamicTypeInfo for Simple<A> {
+            impl<A: ::std::any::Any> ::type_info::DynamicTypeInfo for Simple<A> {
                 fn type_ref(&self) -> &'static ::type_info::Type {
                     &<Self as ::type_info::TypeInfo>::TYPE
                 }
