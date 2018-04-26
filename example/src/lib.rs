@@ -4,13 +4,13 @@ extern crate type_info;
 #[macro_use]
 extern crate type_info_derive;
 
-#[derive(TypeInfo)]
+#[derive(Debug, Eq, Ord, PartialEq, PartialOrd, TypeInfo)]
 struct SimpleNamed {
     foo: String,
     bar: i32,
 }
 
-#[derive(TypeInfo)]
+#[derive(Debug, Eq, Ord, PartialEq, PartialOrd, TypeInfo)]
 struct SimpleUnnamed(String, i32);
 
 #[cfg(test)]
@@ -52,6 +52,21 @@ mod tests {
         assert_eq!(
             Some(&mut 3),
             simple.field_mut::<i32>(type_info::FieldId::Named("bar"))
+        );
+
+        *simple
+            .field_mut::<String>(type_info::FieldId::Named("foo"))
+            .unwrap() = "world".to_owned();
+        *simple
+            .field_mut::<i32>(type_info::FieldId::Named("bar"))
+            .unwrap() = 42;
+
+        assert_eq!(
+            simple,
+            super::SimpleNamed {
+                foo: "world".to_owned(),
+                bar: 42,
+            }
         );
     }
 
@@ -117,6 +132,15 @@ mod tests {
             Some(&mut 3),
             simple.field_mut::<i32>(type_info::FieldId::Unnamed(1))
         );
+
+        *simple
+            .field_mut::<String>(type_info::FieldId::Unnamed(0))
+            .unwrap() = "world".to_owned();
+        *simple
+            .field_mut::<i32>(type_info::FieldId::Unnamed(1))
+            .unwrap() = 42;
+
+        assert_eq!(simple, super::SimpleUnnamed("world".to_owned(), 42));
     }
 
     #[test]
