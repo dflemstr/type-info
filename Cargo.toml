@@ -1,7 +1,12 @@
 [package]
-name = "type-info"
-version = "0.1.0"
 authors = ["David Flemström <david.flemstrom@gmail.com>"]
+categories = ["data-structures"]
+description = "Meta type information and type reflection at compile-time and runtime."
+keywords = ["reflection", "type", "metaclass", "meta", "introspection"]
+license = "MIT"
+name = "type-info"
+repository = "https://github.com/dflemstr/type-info"
+version = "0.1.0"
 
 [dependencies]
 
