@@ -46,6 +46,16 @@ fn test_struct_unit() {
                 fn type_ref(&self) -> &'static ::type_info::Type {
                     &<Self as ::type_info::TypeInfo>::TYPE
                 }
+                fn field_dyn(&self, id: ::type_info::FieldId) -> ::std::option::Option<&::std::any::Any> {
+                    match id {
+                        _ => ::std::option::Option::None,
+                    }
+                }
+                fn field_dyn_mut(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut ::std::any::Any> {
+                    match id {
+                        _ => ::std::option::Option::None,
+                    }
+                }
             }
         }
     }
@@ -116,6 +126,20 @@ fn test_struct_named_fields() {
                 fn type_ref(&self) -> &'static ::type_info::Type {
                     &<Self as ::type_info::TypeInfo>::TYPE
                 }
+                fn field_dyn(&self, id: ::type_info::FieldId) -> ::std::option::Option<&::std::any::Any> {
+                    match id {
+                        ::type_info::FieldId::Named("name") => Some(&self.name),
+                        ::type_info::FieldId::Named("age") => Some(&self.age),
+                        _ => ::std::option::Option::None,
+                    }
+                }
+                fn field_dyn_mut(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut ::std::any::Any> {
+                    match id {
+                        ::type_info::FieldId::Named("name") => Some(&mut self.name),
+                        ::type_info::FieldId::Named("age") => Some(&mut self.age),
+                        _ => ::std::option::Option::None,
+                    }
+                }
             }
         }
     }
@@ -182,6 +206,20 @@ fn test_struct_unnamed_fields() {
             impl ::type_info::DynamicTypeInfo for Simple {
                 fn type_ref(&self) -> &'static ::type_info::Type {
                     &<Self as ::type_info::TypeInfo>::TYPE
+                }
+                fn field_dyn(&self, id: ::type_info::FieldId) -> ::std::option::Option<&::std::any::Any> {
+                    match id {
+                        ::type_info::FieldId::Unnamed(0usize) => Some(&self.0),
+                        ::type_info::FieldId::Unnamed(1usize) => Some(&self.1),
+                        _ => ::std::option::Option::None,
+                    }
+                }
+                fn field_dyn_mut(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut ::std::any::Any> {
+                    match id {
+                        ::type_info::FieldId::Unnamed(0usize) => Some(&mut self.0),
+                        ::type_info::FieldId::Unnamed(1usize) => Some(&mut self.1),
+                        _ => ::std::option::Option::None,
+                    }
                 }
             }
         }
@@ -253,6 +291,20 @@ fn test_struct_named_fields_generics() {
                 fn type_ref(&self) -> &'static ::type_info::Type {
                     &<Self as ::type_info::TypeInfo>::TYPE
                 }
+                fn field_dyn(&self, id: ::type_info::FieldId) -> ::std::option::Option<&::std::any::Any> {
+                    match id {
+                        ::type_info::FieldId::Named("name") => Some(&self.name),
+                        ::type_info::FieldId::Named("age") => Some(&self.age),
+                        _ => ::std::option::Option::None,
+                    }
+                }
+                fn field_dyn_mut(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut ::std::any::Any> {
+                    match id {
+                        ::type_info::FieldId::Named("name") => Some(&mut self.name),
+                        ::type_info::FieldId::Named("age") => Some(&mut self.age),
+                        _ => ::std::option::Option::None,
+                    }
+                }
             }
         }
     }
@@ -319,6 +371,20 @@ fn test_struct_unnamed_fields_generics() {
             impl<A: 'static> ::type_info::DynamicTypeInfo for Simple<A> {
                 fn type_ref(&self) -> &'static ::type_info::Type {
                     &<Self as ::type_info::TypeInfo>::TYPE
+                }
+                fn field_dyn(&self, id: ::type_info::FieldId) -> ::std::option::Option<&::std::any::Any> {
+                    match id {
+                        ::type_info::FieldId::Unnamed(0usize) => Some(&self.0),
+                        ::type_info::FieldId::Unnamed(1usize) => Some(&self.1),
+                        _ => ::std::option::Option::None,
+                    }
+                }
+                fn field_dyn_mut(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut ::std::any::Any> {
+                    match id {
+                        ::type_info::FieldId::Unnamed(0usize) => Some(&mut self.0),
+                        ::type_info::FieldId::Unnamed(1usize) => Some(&mut self.1),
+                        _ => ::std::option::Option::None,
+                    }
                 }
             }
         }

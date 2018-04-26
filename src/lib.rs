@@ -59,6 +59,22 @@ pub trait TypeInfo: DynamicTypeInfo {
 pub trait DynamicTypeInfo {
     /// The dynamic statically known type information for this type.
     fn type_ref(&self) -> &'static Type;
+
+    /// Get a dynamic reference to the value of a field on this type with the given field id.
+    ///
+    /// This method will return the current value of the given field if possible, or `None` if the
+    /// given field does not exist or does not have a type matching the supplied type.
+    fn field_dyn(&self, id: FieldId) -> Option<&any::Any> {
+        panic!("no such field id: {}", id)
+    }
+
+    /// Get a mutable dynamic reference to the value of a field on this type with the given field id.
+    ///
+    /// This method will return the current value of the given field if possible, or `None` if the
+    /// given field does not exist or does not have a type matching the supplied type.
+    fn field_dyn_mut(&mut self, id: FieldId) -> Option<&mut any::Any> {
+        panic!("no such field id: {}", id)
+    }
 }
 
 /// A trait that is implemented for every type to conditionally determine whether it exposes type

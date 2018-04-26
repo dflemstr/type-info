@@ -89,6 +89,29 @@ fn impl_type_info(mut ast: syn::DeriveInput) -> quote::Tokens {
                 }
             }
         });
+
+    let fields_dyn = type_info
+        .data
+        .fields
+        .as_ref()
+        .map(|f| f.fields.as_slice())
+        .unwrap_or_else(|| &[])
+        .iter()
+        .map(|f| match f.id {
+            MetaFieldId::Unnamed(ref i) => {
+                let i_usize = i.index as usize;
+                quote! {
+                    ::type_info::FieldId::Unnamed(#i_usize) => Some(&self.#i),
+                }
+            }
+            MetaFieldId::Named(i) => {
+                let i_str = i.as_ref();
+                quote! {
+                    ::type_info::FieldId::Named(#i_str) => Some(&self.#i),
+                }
+            }
+        });
+
     let fields_mut = type_info
         .data
         .fields
@@ -111,6 +134,28 @@ fn impl_type_info(mut ast: syn::DeriveInput) -> quote::Tokens {
                     ::type_info::FieldId::Named(#i_str) => {
                         ::std::any::Any::downcast_mut::<TypeInfoA>(&mut self.#i)
                     }
+                }
+            }
+        });
+
+    let fields_dyn_mut = type_info
+        .data
+        .fields
+        .as_ref()
+        .map(|f| f.fields.as_slice())
+        .unwrap_or_else(|| &[])
+        .iter()
+        .map(|f| match f.id {
+            MetaFieldId::Unnamed(ref i) => {
+                let i_usize = i.index as usize;
+                quote! {
+                    ::type_info::FieldId::Unnamed(#i_usize) => Some(&mut self.#i),
+                }
+            }
+            MetaFieldId::Named(i) => {
+                let i_str = i.as_ref();
+                quote! {
+                    ::type_info::FieldId::Named(#i_str) => Some(&mut self.#i),
                 }
             }
         });
@@ -143,6 +188,20 @@ fn impl_type_info(mut ast: syn::DeriveInput) -> quote::Tokens {
         impl #impl_generics ::type_info::DynamicTypeInfo for #ident #ty_generics #where_clause {
             fn type_ref(&self) -> &'static ::type_info::Type {
                 &<Self as ::type_info::TypeInfo>::TYPE
+            }
+
+            fn field_dyn(&self, id: ::type_info::FieldId) -> ::std::option::Option<&::std::any::Any> {
+                match id {
+                    #(#fields_dyn)*
+                    _ => ::std::option::Option::None,
+                }
+            }
+
+            fn field_dyn_mut(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut ::std::any::Any> {
+                match id {
+                    #(#fields_dyn_mut)*
+                    _ => ::std::option::Option::None,
+                }
             }
         }
     }
