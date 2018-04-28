@@ -484,3 +484,63 @@ fn test_enum_unnamed_fields() {
         }
     }
 }
+
+
+#[test]
+fn test_enum_named_fields() {
+    test_derive! {
+        type_info_test {
+            enum Simple {
+                First { a: usize, b: i32 },
+                Second { a: String },
+            }
+        }
+        expands to {
+            impl ::type_info::TypeInfo for Simple {
+                const TYPE: ::type_info::Type = ::type_info::Type {
+                    id: ::type_info::TypeId::of::<Simple>(),
+                    module: module_path!(),
+                    ident: "Simple",
+                    data: ::type_info::Data::Enum(::type_info::DataEnum {
+                        variants: &[
+                            ::type_info::Variant {
+                                ident: "First",
+                                fields: ::type_info::Fields::Named(::type_info::FieldsNamed {
+                                    named: &[
+                                        ::type_info::Field {
+                                            id: ::type_info::FieldId::Named("a"),
+                                            ident: Some("a"),
+                                            ty: <usize as ::type_info::TryTypeInfo>::TRY_TYPE,
+                                        },
+                                        ::type_info::Field {
+                                            id: ::type_info::FieldId::Named("b"),
+                                            ident: Some("b"),
+                                            ty: <i32 as ::type_info::TryTypeInfo>::TRY_TYPE,
+                                        },
+                                    ],
+                                }),
+                            },
+                            ::type_info::Variant {
+                                ident: "Second",
+                                fields: ::type_info::Fields::Named(::type_info::FieldsNamed {
+                                    named: &[
+                                        ::type_info::Field {
+                                            id: ::type_info::FieldId::Named("a"),
+                                            ident: Some("a"),
+                                            ty: <String as ::type_info::TryTypeInfo>::TRY_TYPE,
+                                        },
+                                    ],
+                                }),
+                            },
+                        ],
+                    }),
+                };
+            }
+            impl ::type_info::DynamicTypeInfo for Simple {
+                fn type_ref(&self) -> &'static ::type_info::Type {
+                    &<Self as ::type_info::TypeInfo>::TYPE
+                }
+            }
+        }
+    }
+}
