@@ -168,7 +168,6 @@ fn build_field_mut_fn(type_info: &MetaType) -> quote::Tokens {
     }
 }
 
-
 fn build_field_dyn_fn(type_info: &MetaType) -> quote::Tokens {
     let meta_fields = meta_fields(&type_info);
 
