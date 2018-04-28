@@ -187,6 +187,36 @@ fn build_field_mut_fn(type_info: &MetaType) -> quote::Tokens {
     }
 }
 
+fn build_variant_fn(type_info: &MetaType) -> quote::Tokens {
+    match type_info.data.variants {
+        Some(ref meta_variants) if !meta_variants.is_empty() => {
+            let variants = meta_variants.iter().map(|v| {
+                let type_ident = type_info.ident;
+                let ident = v.id.0;
+                let ident_str = ident.as_ref();
+                match v.fields.kind {
+                    MetaFieldsKind::Unit => quote! { #type_ident::#ident => Some(#ident_str), },
+                    MetaFieldsKind::Unnamed(_) => {
+                        quote! { #type_ident::#ident( .. ) => Some(#ident_str), }
+                    }
+                    MetaFieldsKind::Named(_) => {
+                        quote! { #type_ident::#ident { .. } => Some(#ident_str), }
+                    }
+                }
+            });
+
+            quote! {
+                fn variant(&self) -> ::std::option::Option<&str> {
+                    match *self {
+                        #(#variants)*
+                    }
+                }
+            }
+        }
+        _ => quote!(),
+    }
+}
+
 fn build_field_any_fn(type_info: &MetaType) -> quote::Tokens {
     let meta_fields = meta_fields(&type_info);
 
@@ -216,36 +246,6 @@ fn build_field_any_fn(type_info: &MetaType) -> quote::Tokens {
                 }
             }
         }
-    }
-}
-
-fn build_variant_fn(type_info: &MetaType) -> quote::Tokens {
-    match type_info.data.variants {
-        Some(ref meta_variants) if !meta_variants.is_empty() => {
-            let variants = meta_variants.iter().map(|v| {
-                let type_ident = type_info.ident;
-                let ident = v.id.0;
-                let ident_str = ident.as_ref();
-                match v.fields.kind {
-                    MetaFieldsKind::Unit => quote! { #type_ident::#ident => Some(#ident_str), },
-                    MetaFieldsKind::Unnamed(_) => {
-                        quote! { #type_ident::#ident( .. ) => Some(#ident_str), }
-                    }
-                    MetaFieldsKind::Named(_) => {
-                        quote! { #type_ident::#ident { .. } => Some(#ident_str), }
-                    }
-                }
-            });
-
-            quote! {
-                fn variant(&self) -> ::std::option::Option<&str> {
-                    match *self {
-                        #(#variants)*
-                    }
-                }
-            }
-        }
-        _ => quote!(),
     }
 }
 
