@@ -65,16 +65,38 @@ fn impl_type_info(mut ast: syn::DeriveInput) -> quote::Tokens {
     let (impl_generics, ty_generics, where_clause) = ast.generics.split_for_impl();
 
     let type_info = build_type_info(&ast);
-    let tokens = type_info.tokens;
+    let tokens = &type_info.tokens;
 
-    let fields = type_info
-        .data
-        .fields
-        .as_ref()
-        .map(|f| f.fields.as_slice())
-        .unwrap_or_else(|| &[])
-        .iter()
-        .map(|f| match f.id {
+    let field_fn = build_field_fn(&type_info);
+    let field_dyn_fn = build_field_dyn_fn(&type_info);
+    let field_mut_fn = build_field_mut_fn(&type_info);
+    let field_dyn_mut_fn = build_field_dyn_mut_fn(&type_info);
+
+    quote! {
+        impl #impl_generics ::type_info::TypeInfo for #ident #ty_generics #where_clause {
+            const TYPE: ::type_info::Type = #tokens;
+            #field_fn
+            #field_mut_fn
+        }
+
+        impl #impl_generics ::type_info::DynamicTypeInfo for #ident #ty_generics #where_clause {
+            fn type_ref(&self) -> &'static ::type_info::Type {
+                &<Self as ::type_info::TypeInfo>::TYPE
+            }
+
+            #field_dyn_fn
+            #field_dyn_mut_fn
+        }
+    }
+}
+
+fn build_field_fn(type_info: &MetaType) -> quote::Tokens {
+    let meta_fields = meta_fields(&type_info);
+
+    if meta_fields.is_empty() {
+        quote!()
+    } else {
+        let fields = meta_fields.iter().map(|f| match f.id {
             MetaFieldId::Unnamed(ref i) => {
                 let i_usize = i.index as usize;
                 quote! {
@@ -93,14 +115,67 @@ fn impl_type_info(mut ast: syn::DeriveInput) -> quote::Tokens {
             }
         });
 
-    let fields_dyn = type_info
-        .data
-        .fields
-        .as_ref()
-        .map(|f| f.fields.as_slice())
-        .unwrap_or_else(|| &[])
-        .iter()
-        .map(|f| match f.id {
+        quote! {
+            fn field<TypeInfoA>(&self, id: ::type_info::FieldId) -> ::std::option::Option<&TypeInfoA>
+            where
+                TypeInfoA: ::std::any::Any,
+            {
+                match id {
+                    #(#fields)*
+                    _ => ::std::option::Option::None,
+                }
+            }
+        }
+    }
+}
+
+fn build_field_mut_fn(type_info: &MetaType) -> quote::Tokens {
+    let meta_fields = meta_fields(&type_info);
+
+    if meta_fields.is_empty() {
+        quote!()
+    } else {
+        let fields = meta_fields.iter().map(|f| match f.id {
+            MetaFieldId::Unnamed(ref i) => {
+                let i_usize = i.index as usize;
+                quote! {
+                    ::type_info::FieldId::Unnamed(#i_usize) => {
+                        ::std::any::Any::downcast_mut::<TypeInfoA>(&mut self.#i)
+                    }
+                }
+            }
+            MetaFieldId::Named(i) => {
+                let i_str = i.as_ref();
+                quote! {
+                    ::type_info::FieldId::Named(#i_str) => {
+                        ::std::any::Any::downcast_mut::<TypeInfoA>(&mut self.#i)
+                    }
+                }
+            }
+        });
+
+        quote! {
+            fn field_mut<TypeInfoA>(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut TypeInfoA>
+            where
+                TypeInfoA: ::std::any::Any,
+            {
+                match id {
+                    #(#fields)*
+                    _ => ::std::option::Option::None,
+                }
+            }
+        }
+    }
+}
+
+
+fn build_field_dyn_fn(type_info: &MetaType) -> quote::Tokens {
+    let meta_fields = meta_fields(&type_info);
+
+    if meta_fields.is_empty() {
+        quote!()
+    } else {
+        let fields = meta_fields.iter().map(|f| match f.id {
             MetaFieldId::Unnamed(ref i) => {
                 let i_usize = i.index as usize;
                 quote! {
@@ -115,40 +190,24 @@ fn impl_type_info(mut ast: syn::DeriveInput) -> quote::Tokens {
             }
         });
 
-    let fields_mut = type_info
-        .data
-        .fields
-        .as_ref()
-        .map(|f| f.fields.as_slice())
-        .unwrap_or_else(|| &[])
-        .iter()
-        .map(|f| match f.id {
-            MetaFieldId::Unnamed(ref i) => {
-                let i_usize = i.index as usize;
-                quote! {
-                    ::type_info::FieldId::Unnamed(#i_usize) => {
-                        ::std::any::Any::downcast_mut::<TypeInfoA>(&mut self.#i)
-                    }
+        quote! {
+            fn field_dyn(&self, id: ::type_info::FieldId) -> ::std::option::Option<&::std::any::Any> {
+                match id {
+                    #(#fields)*
+                    _ => ::std::option::Option::None,
                 }
             }
-            MetaFieldId::Named(i) => {
-                let i_str = i.as_ref();
-                quote! {
-                    ::type_info::FieldId::Named(#i_str) => {
-                        ::std::any::Any::downcast_mut::<TypeInfoA>(&mut self.#i)
-                    }
-                }
-            }
-        });
+        }
+    }
+}
 
-    let fields_dyn_mut = type_info
-        .data
-        .fields
-        .as_ref()
-        .map(|f| f.fields.as_slice())
-        .unwrap_or_else(|| &[])
-        .iter()
-        .map(|f| match f.id {
+fn build_field_dyn_mut_fn(type_info: &MetaType) -> quote::Tokens {
+    let meta_fields = meta_fields(&type_info);
+
+    if meta_fields.is_empty() {
+        quote!()
+    } else {
+        let fields = meta_fields.iter().map(|f| match f.id {
             MetaFieldId::Unnamed(ref i) => {
                 let i_usize = i.index as usize;
                 quote! {
@@ -163,51 +222,24 @@ fn impl_type_info(mut ast: syn::DeriveInput) -> quote::Tokens {
             }
         });
 
-    quote! {
-        impl #impl_generics ::type_info::TypeInfo for #ident #ty_generics #where_clause {
-            const TYPE: ::type_info::Type = #tokens;
-
-            fn field<TypeInfoA>(&self, id: ::type_info::FieldId) -> ::std::option::Option<&TypeInfoA>
-            where
-                TypeInfoA: ::std::any::Any,
-            {
+        quote! {
+            fn field_dyn_mut(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut ::std::any::Any> {
                 match id {
                     #(#fields)*
                     _ => ::std::option::Option::None,
                 }
             }
-
-            fn field_mut<TypeInfoA>(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut TypeInfoA>
-            where
-                TypeInfoA: ::std::any::Any,
-            {
-                match id {
-                    #(#fields_mut)*
-                    _ => ::std::option::Option::None,
-                }
-            }
-        }
-
-        impl #impl_generics ::type_info::DynamicTypeInfo for #ident #ty_generics #where_clause {
-            fn type_ref(&self) -> &'static ::type_info::Type {
-                &<Self as ::type_info::TypeInfo>::TYPE
-            }
-
-            fn field_dyn(&self, id: ::type_info::FieldId) -> ::std::option::Option<&::std::any::Any> {
-                match id {
-                    #(#fields_dyn)*
-                    _ => ::std::option::Option::None,
-                }
-            }
-
-            fn field_dyn_mut(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut ::std::any::Any> {
-                match id {
-                    #(#fields_dyn_mut)*
-                    _ => ::std::option::Option::None,
-                }
-            }
         }
     }
+}
+
+fn meta_fields<'a>(type_info: &'a MetaType) -> &'a [MetaField<'a>] {
+    type_info
+        .data
+        .fields
+        .as_ref()
+        .map(|f| f.fields.as_slice())
+        .unwrap_or_else(|| &[])
 }
 
 fn add_static(generics: &mut syn::Generics) {

@@ -38,7 +38,7 @@ pub trait TypeInfo: DynamicTypeInfo {
     where
         A: any::Any,
     {
-        panic!("no such field id: {}", id)
+        None
     }
 
     /// Get a mutable reference to the value of a field on this type with the given field id.
@@ -49,7 +49,7 @@ pub trait TypeInfo: DynamicTypeInfo {
     where
         A: any::Any,
     {
-        panic!("no such field id: {}", id)
+        None
     }
 }
 
@@ -65,7 +65,7 @@ pub trait DynamicTypeInfo {
     /// This method will return the current value of the given field if possible, or `None` if the
     /// given field does not exist or does not have a type matching the supplied type.
     fn field_dyn(&self, id: FieldId) -> Option<&any::Any> {
-        panic!("no such field id: {}", id)
+        None
     }
 
     /// Get a mutable dynamic reference to the value of a field on this type with the given field id.
@@ -73,7 +73,7 @@ pub trait DynamicTypeInfo {
     /// This method will return the current value of the given field if possible, or `None` if the
     /// given field does not exist or does not have a type matching the supplied type.
     fn field_dyn_mut(&mut self, id: FieldId) -> Option<&mut any::Any> {
-        panic!("no such field id: {}", id)
+        None
     }
 }
 

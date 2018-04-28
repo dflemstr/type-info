@@ -24,36 +24,10 @@ fn test_struct_unit() {
                         fields: ::type_info::Fields::Unit,
                     }),
                 };
-                fn field<TypeInfoA>(&self, id: ::type_info::FieldId) -> ::std::option::Option<&TypeInfoA>
-                where
-                    TypeInfoA: ::std::any::Any,
-                {
-                    match id {
-                        _ => ::std::option::Option::None,
-                    }
-                }
-                fn field_mut<TypeInfoA>(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut TypeInfoA>
-                where
-                    TypeInfoA: ::std::any::Any,
-                {
-                    match id {
-                        _ => ::std::option::Option::None,
-                    }
-                }
             }
             impl ::type_info::DynamicTypeInfo for Simple {
                 fn type_ref(&self) -> &'static ::type_info::Type {
                     &<Self as ::type_info::TypeInfo>::TYPE
-                }
-                fn field_dyn(&self, id: ::type_info::FieldId) -> ::std::option::Option<&::std::any::Any> {
-                    match id {
-                        _ => ::std::option::Option::None,
-                    }
-                }
-                fn field_dyn_mut(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut ::std::any::Any> {
-                    match id {
-                        _ => ::std::option::Option::None,
-                    }
                 }
             }
         }
@@ -404,36 +378,10 @@ fn test_enum_unit() {
                     ident: "Simple",
                     data: ::type_info::Data::Enum(::type_info::DataEnum { variants: &[], }),
                 };
-                fn field<TypeInfoA>(&self, id: ::type_info::FieldId) -> ::std::option::Option<&TypeInfoA>
-                where
-                    TypeInfoA: ::std::any::Any,
-                {
-                    match id {
-                        _ => ::std::option::Option::None,
-                    }
-                }
-                fn field_mut<TypeInfoA>(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut TypeInfoA>
-                where
-                    TypeInfoA: ::std::any::Any,
-                {
-                    match id {
-                        _ => ::std::option::Option::None,
-                    }
-                }
             }
             impl ::type_info::DynamicTypeInfo for Simple {
                 fn type_ref(&self) -> &'static ::type_info::Type {
                     &<Self as ::type_info::TypeInfo>::TYPE
-                }
-                fn field_dyn(&self, id: ::type_info::FieldId) -> ::std::option::Option<&::std::any::Any> {
-                    match id {
-                        _ => ::std::option::Option::None,
-                    }
-                }
-                fn field_dyn_mut(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut ::std::any::Any> {
-                    match id {
-                        _ => ::std::option::Option::None,
-                    }
                 }
             }
         }
@@ -468,36 +416,10 @@ fn test_enum_c_like() {
                         ],
                     }),
                 };
-                fn field<TypeInfoA>(&self, id: ::type_info::FieldId) -> ::std::option::Option<&TypeInfoA>
-                where
-                    TypeInfoA: ::std::any::Any,
-                {
-                    match id {
-                        _ => ::std::option::Option::None,
-                    }
-                }
-                fn field_mut<TypeInfoA>(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut TypeInfoA>
-                where
-                    TypeInfoA: ::std::any::Any,
-                {
-                    match id {
-                        _ => ::std::option::Option::None,
-                    }
-                }
             }
             impl ::type_info::DynamicTypeInfo for Simple {
                 fn type_ref(&self) -> &'static ::type_info::Type {
                     &<Self as ::type_info::TypeInfo>::TYPE
-                }
-                fn field_dyn(&self, id: ::type_info::FieldId) -> ::std::option::Option<&::std::any::Any> {
-                    match id {
-                        _ => ::std::option::Option::None,
-                    }
-                }
-                fn field_dyn_mut(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut ::std::any::Any> {
-                    match id {
-                        _ => ::std::option::Option::None,
-                    }
                 }
             }
         }
@@ -553,36 +475,10 @@ fn test_enum_unnamed_fields() {
                         ],
                     }),
                 };
-                fn field<TypeInfoA>(&self, id: ::type_info::FieldId) -> ::std::option::Option<&TypeInfoA>
-                where
-                    TypeInfoA: ::std::any::Any,
-                {
-                    match id {
-                        _ => ::std::option::Option::None,
-                    }
-                }
-                fn field_mut<TypeInfoA>(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut TypeInfoA>
-                where
-                    TypeInfoA: ::std::any::Any,
-                {
-                    match id {
-                        _ => ::std::option::Option::None,
-                    }
-                }
             }
             impl ::type_info::DynamicTypeInfo for Simple {
                 fn type_ref(&self) -> &'static ::type_info::Type {
                     &<Self as ::type_info::TypeInfo>::TYPE
-                }
-                fn field_dyn(&self, id: ::type_info::FieldId) -> ::std::option::Option<&::std::any::Any> {
-                    match id {
-                        _ => ::std::option::Option::None,
-                    }
-                }
-                fn field_dyn_mut(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut ::std::any::Any> {
-                    match id {
-                        _ => ::std::option::Option::None,
-                    }
                 }
             }
         }
