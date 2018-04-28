@@ -11,6 +11,8 @@ extern crate quote;
 #[macro_use]
 extern crate syn;
 #[cfg(test)]
+extern crate tempfile;
+#[cfg(test)]
 extern crate type_info;
 
 #[cfg(test)]

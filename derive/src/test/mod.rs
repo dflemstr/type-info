@@ -1,5 +1,3 @@
-use std::fmt;
-
 use proc_macro2;
 use quote;
 use syn;
@@ -8,6 +6,7 @@ use super::type_info_test;
 
 #[macro_use]
 mod macros;
+mod utils;
 
 #[test]
 fn test_struct_unit() {
@@ -383,6 +382,205 @@ fn test_struct_unnamed_fields_generics() {
                     match id {
                         ::type_info::FieldId::Unnamed(0usize) => Some(&mut self.0),
                         ::type_info::FieldId::Unnamed(1usize) => Some(&mut self.1),
+                        _ => ::std::option::Option::None,
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn test_enum_unit() {
+    test_derive! {
+        type_info_test {
+            enum Simple {}
+        }
+        expands to {
+            impl ::type_info::TypeInfo for Simple {
+                const TYPE: ::type_info::Type = ::type_info::Type {
+                    id: ::type_info::TypeId::of::<Simple>(),
+                    module: module_path!(),
+                    ident: "Simple",
+                    data: ::type_info::Data::Enum(::type_info::DataEnum { variants: &[], }),
+                };
+                fn field<TypeInfoA>(&self, id: ::type_info::FieldId) -> ::std::option::Option<&TypeInfoA>
+                where
+                    TypeInfoA: ::std::any::Any,
+                {
+                    match id {
+                        _ => ::std::option::Option::None,
+                    }
+                }
+                fn field_mut<TypeInfoA>(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut TypeInfoA>
+                where
+                    TypeInfoA: ::std::any::Any,
+                {
+                    match id {
+                        _ => ::std::option::Option::None,
+                    }
+                }
+            }
+            impl ::type_info::DynamicTypeInfo for Simple {
+                fn type_ref(&self) -> &'static ::type_info::Type {
+                    &<Self as ::type_info::TypeInfo>::TYPE
+                }
+                fn field_dyn(&self, id: ::type_info::FieldId) -> ::std::option::Option<&::std::any::Any> {
+                    match id {
+                        _ => ::std::option::Option::None,
+                    }
+                }
+                fn field_dyn_mut(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut ::std::any::Any> {
+                    match id {
+                        _ => ::std::option::Option::None,
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn test_enum_c_like() {
+    test_derive! {
+        type_info_test {
+            enum Simple {
+                First,
+                Second,
+            }
+        }
+        expands to {
+            impl ::type_info::TypeInfo for Simple {
+                const TYPE: ::type_info::Type = ::type_info::Type {
+                    id: ::type_info::TypeId::of::<Simple>(),
+                    module: module_path!(),
+                    ident: "Simple",
+                    data: ::type_info::Data::Enum(::type_info::DataEnum {
+                        variants: &[
+                            ::type_info::Variant {
+                                ident: "First",
+                                fields: ::type_info::Fields::Unit,
+                            },
+                            ::type_info::Variant {
+                                ident: "Second",
+                                fields: ::type_info::Fields::Unit,
+                            },
+                        ],
+                    }),
+                };
+                fn field<TypeInfoA>(&self, id: ::type_info::FieldId) -> ::std::option::Option<&TypeInfoA>
+                where
+                    TypeInfoA: ::std::any::Any,
+                {
+                    match id {
+                        _ => ::std::option::Option::None,
+                    }
+                }
+                fn field_mut<TypeInfoA>(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut TypeInfoA>
+                where
+                    TypeInfoA: ::std::any::Any,
+                {
+                    match id {
+                        _ => ::std::option::Option::None,
+                    }
+                }
+            }
+            impl ::type_info::DynamicTypeInfo for Simple {
+                fn type_ref(&self) -> &'static ::type_info::Type {
+                    &<Self as ::type_info::TypeInfo>::TYPE
+                }
+                fn field_dyn(&self, id: ::type_info::FieldId) -> ::std::option::Option<&::std::any::Any> {
+                    match id {
+                        _ => ::std::option::Option::None,
+                    }
+                }
+                fn field_dyn_mut(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut ::std::any::Any> {
+                    match id {
+                        _ => ::std::option::Option::None,
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn test_enum_unnamed_fields() {
+    test_derive! {
+        type_info_test {
+            enum Simple {
+                First(usize, i32),
+                Second(String),
+            }
+        }
+        expands to {
+            impl ::type_info::TypeInfo for Simple {
+                const TYPE: ::type_info::Type = ::type_info::Type {
+                    id: ::type_info::TypeId::of::<Simple>(),
+                    module: module_path!(),
+                    ident: "Simple",
+                    data: ::type_info::Data::Enum(::type_info::DataEnum {
+                        variants: &[
+                            ::type_info::Variant {
+                                ident: "First",
+                                fields: ::type_info::Fields::Unnamed(::type_info::FieldsUnnamed {
+                                    unnamed: &[
+                                        ::type_info::Field {
+                                            id: ::type_info::FieldId::Unnamed(0usize),
+                                            ident: None,
+                                            ty: <usize as ::type_info::TryTypeInfo>::TRY_TYPE,
+                                        },
+                                        ::type_info::Field {
+                                            id: ::type_info::FieldId::Unnamed(1usize),
+                                            ident: None,
+                                            ty: <i32 as ::type_info::TryTypeInfo>::TRY_TYPE,
+                                        },
+                                    ],
+                                }),
+                            },
+                            ::type_info::Variant {
+                                ident: "Second",
+                                fields: ::type_info::Fields::Unnamed(::type_info::FieldsUnnamed {
+                                    unnamed: &[
+                                        ::type_info::Field {
+                                            id: ::type_info::FieldId::Unnamed(0usize),
+                                            ident: None,
+                                            ty: <String as ::type_info::TryTypeInfo>::TRY_TYPE,
+                                        },
+                                    ],
+                                }),
+                            },
+                        ],
+                    }),
+                };
+                fn field<TypeInfoA>(&self, id: ::type_info::FieldId) -> ::std::option::Option<&TypeInfoA>
+                where
+                    TypeInfoA: ::std::any::Any,
+                {
+                    match id {
+                        _ => ::std::option::Option::None,
+                    }
+                }
+                fn field_mut<TypeInfoA>(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut TypeInfoA>
+                where
+                    TypeInfoA: ::std::any::Any,
+                {
+                    match id {
+                        _ => ::std::option::Option::None,
+                    }
+                }
+            }
+            impl ::type_info::DynamicTypeInfo for Simple {
+                fn type_ref(&self) -> &'static ::type_info::Type {
+                    &<Self as ::type_info::TypeInfo>::TYPE
+                }
+                fn field_dyn(&self, id: ::type_info::FieldId) -> ::std::option::Option<&::std::any::Any> {
+                    match id {
+                        _ => ::std::option::Option::None,
+                    }
+                }
+                fn field_dyn_mut(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut ::std::any::Any> {
+                    match id {
                         _ => ::std::option::Option::None,
                     }
                 }
