@@ -60,6 +60,12 @@ pub trait DynamicTypeInfo {
     /// The dynamic statically known type information for this type.
     fn type_ref(&self) -> &'static Type;
 
+    /// Get the id of the currently active variant of this type, or `None` if the type is not
+    /// an `enum`.
+    fn variant(&self) -> Option<&str> {
+        None
+    }
+
     /// Get a dynamic reference to the value of a field on this type with the given field id.
     ///
     /// This method will return the current value of the given field if possible, or `None` if the

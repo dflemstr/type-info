@@ -421,6 +421,12 @@ fn test_enum_c_like() {
                 fn type_ref(&self) -> &'static ::type_info::Type {
                     &<Self as ::type_info::TypeInfo>::TYPE
                 }
+                fn variant(&self) -> ::std::option::Option<&str> {
+                    match *self {
+                        Simple::First => Some("First"),
+                        Simple::Second => Some("Second"),
+                    }
+                }
             }
         }
     }
@@ -480,11 +486,16 @@ fn test_enum_unnamed_fields() {
                 fn type_ref(&self) -> &'static ::type_info::Type {
                     &<Self as ::type_info::TypeInfo>::TYPE
                 }
+                fn variant(&self) -> ::std::option::Option<&str> {
+                    match *self {
+                        Simple::First(..) => Some("First"),
+                        Simple::Second(..) => Some("Second"),
+                    }
+                }
             }
         }
     }
 }
-
 
 #[test]
 fn test_enum_named_fields() {
@@ -539,6 +550,12 @@ fn test_enum_named_fields() {
             impl ::type_info::DynamicTypeInfo for Simple {
                 fn type_ref(&self) -> &'static ::type_info::Type {
                     &<Self as ::type_info::TypeInfo>::TYPE
+                }
+                fn variant(&self) -> ::std::option::Option<&str> {
+                    match *self {
+                        Simple::First { .. } => Some("First"),
+                        Simple::Second { .. } => Some("Second"),
+                    }
                 }
             }
         }

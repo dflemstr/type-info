@@ -20,17 +20,26 @@ mod test;
 
 struct MetaType<'a> {
     tokens: quote::Tokens,
+    ident: syn::Ident,
     data: MetaData<'a>,
 }
 
 struct MetaData<'a> {
     tokens: quote::Tokens,
     fields: Option<MetaFields<'a>>,
+    variants: Option<Vec<MetaVariant<'a>>>,
 }
 
 struct MetaFields<'a> {
     tokens: quote::Tokens,
+    kind: MetaFieldsKind,
     fields: Vec<MetaField<'a>>,
+}
+
+enum MetaFieldsKind {
+    Unit,
+    Unnamed(usize),
+    Named(usize),
 }
 
 struct MetaField<'a> {
@@ -38,10 +47,18 @@ struct MetaField<'a> {
     id: MetaFieldId<'a>,
 }
 
+struct MetaVariant<'a> {
+    tokens: quote::Tokens,
+    id: MetaVariantId,
+    fields: MetaFields<'a>,
+}
+
 enum MetaFieldId<'a> {
     Unnamed(syn::Index),
     Named(&'a syn::Ident),
 }
+
+struct MetaVariantId(syn::Ident);
 
 /// Derive the `TypeInfo` and `DynamicTypeInfo` traits for a given type.
 #[proc_macro_derive(TypeInfo, attributes(type_info))]
@@ -68,8 +85,9 @@ fn impl_type_info(mut ast: syn::DeriveInput) -> quote::Tokens {
     let tokens = &type_info.tokens;
 
     let field_fn = build_field_fn(&type_info);
-    let field_any_fn = build_field_any_fn(&type_info);
     let field_mut_fn = build_field_mut_fn(&type_info);
+    let variant_fn = build_variant_fn(&type_info);
+    let field_any_fn = build_field_any_fn(&type_info);
     let field_any_mut_fn = build_field_any_mut_fn(&type_info);
 
     quote! {
@@ -84,6 +102,7 @@ fn impl_type_info(mut ast: syn::DeriveInput) -> quote::Tokens {
                 &<Self as ::type_info::TypeInfo>::TYPE
             }
 
+            #variant_fn
             #field_any_fn
             #field_any_mut_fn
         }
@@ -200,6 +219,36 @@ fn build_field_any_fn(type_info: &MetaType) -> quote::Tokens {
     }
 }
 
+fn build_variant_fn(type_info: &MetaType) -> quote::Tokens {
+    match type_info.data.variants {
+        Some(ref meta_variants) if !meta_variants.is_empty() => {
+            let variants = meta_variants.iter().map(|v| {
+                let type_ident = type_info.ident;
+                let ident = v.id.0;
+                let ident_str = ident.as_ref();
+                match v.fields.kind {
+                    MetaFieldsKind::Unit => quote! { #type_ident::#ident => Some(#ident_str), },
+                    MetaFieldsKind::Unnamed(_) => {
+                        quote! { #type_ident::#ident( .. ) => Some(#ident_str), }
+                    }
+                    MetaFieldsKind::Named(_) => {
+                        quote! { #type_ident::#ident { .. } => Some(#ident_str), }
+                    }
+                }
+            });
+
+            quote! {
+                fn variant(&self) -> ::std::option::Option<&str> {
+                    match *self {
+                        #(#variants)*
+                    }
+                }
+            }
+        }
+        _ => quote!(),
+    }
+}
+
 fn build_field_any_mut_fn(type_info: &MetaType) -> quote::Tokens {
     let meta_fields = meta_fields(&type_info);
 
@@ -270,8 +319,13 @@ fn build_type_info(ast: &syn::DeriveInput) -> MetaType {
             }
         }
     };
+    let ident = ast.ident.clone();
 
-    MetaType { tokens, data }
+    MetaType {
+        tokens,
+        ident,
+        data,
+    }
 }
 
 fn build_data(data: &syn::Data) -> MetaData {
@@ -308,26 +362,32 @@ fn build_data_struct(data_struct: &syn::DataStruct) -> MetaData {
     MetaData {
         tokens,
         fields: Some(data_struct_fields),
+        variants: None,
     }
 }
 
 fn build_data_enum(data_enum: &syn::DataEnum) -> MetaData {
-    let tokens = data_enum
+    let variants = data_enum
         .variants
         .iter()
         .map(build_variant)
-        .map(|v| v.tokens);
-    let tokens = quote! {
-        ::type_info::DataEnum {
-            variants: &[
-                #(#tokens,)*
-            ],
+        .collect::<Vec<_>>();
+
+    let tokens = {
+        let variant_tokens = variants.iter().map(|v| &v.tokens);
+        quote! {
+            ::type_info::DataEnum {
+                variants: &[
+                    #(#variant_tokens,)*
+                ],
+            }
         }
     };
 
     MetaData {
         tokens,
         fields: None,
+        variants: Some(variants),
     }
 }
 
@@ -345,19 +405,28 @@ fn build_data_union(data_union: &syn::DataUnion) -> MetaData {
     MetaData {
         tokens,
         fields: Some(fields_named),
+        variants: None,
     }
 }
 
-fn build_variant(variant: &syn::Variant) -> MetaFields {
+fn build_variant(variant: &syn::Variant) -> MetaVariant {
     let ident = variant.ident.as_ref();
-    build_fields(&variant.fields).map_tokens(|tokens| {
+    let fields = build_fields(&variant.fields);
+    let tokens = {
+        let field_tokens = &fields.tokens;
         quote! {
             ::type_info::Variant {
                 ident: #ident,
-                fields: #tokens,
+                fields: #field_tokens,
             }
         }
-    })
+    };
+
+    MetaVariant {
+        tokens,
+        id: MetaVariantId(variant.ident),
+        fields,
+    }
 }
 
 fn build_fields(fields: &syn::Fields) -> MetaFields {
@@ -379,6 +448,7 @@ fn build_fields(fields: &syn::Fields) -> MetaFields {
             tokens: quote! {
                 ::type_info::Fields::Unit
             },
+            kind: MetaFieldsKind::Unit,
             fields: vec![],
         },
     }
@@ -401,8 +471,13 @@ fn build_fields_named(fields_named: &syn::FieldsNamed) -> MetaFields {
             }
         }
     };
+    let kind = MetaFieldsKind::Named(fields.len());
 
-    MetaFields { tokens, fields }
+    MetaFields {
+        tokens,
+        fields,
+        kind,
+    }
 }
 
 fn build_fields_unnamed(fields_unnamed: &syn::FieldsUnnamed) -> MetaFields {
@@ -422,8 +497,13 @@ fn build_fields_unnamed(fields_unnamed: &syn::FieldsUnnamed) -> MetaFields {
             }
         }
     };
+    let kind = MetaFieldsKind::Unnamed(fields.len());
 
-    MetaFields { tokens, fields }
+    MetaFields {
+        tokens,
+        fields,
+        kind,
+    }
 }
 
 fn build_field(idx: usize, field: &syn::Field) -> MetaField {
@@ -469,6 +549,7 @@ impl<'a> MetaData<'a> {
         MetaData {
             tokens: mapper(self.tokens),
             fields: self.fields,
+            variants: self.variants,
         }
     }
 }
@@ -480,6 +561,7 @@ impl<'a> MetaFields<'a> {
     {
         MetaFields {
             tokens: mapper(self.tokens),
+            kind: self.kind,
             fields: self.fields,
         }
     }
