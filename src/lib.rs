@@ -64,7 +64,7 @@ pub trait DynamicTypeInfo {
     ///
     /// This method will return the current value of the given field if possible, or `None` if the
     /// given field does not exist or does not have a type matching the supplied type.
-    fn field_dyn(&self, _id: FieldId) -> Option<&any::Any> {
+    fn field_any(&self, _id: FieldId) -> Option<&any::Any> {
         None
     }
 
@@ -72,7 +72,7 @@ pub trait DynamicTypeInfo {
     ///
     /// This method will return the current value of the given field if possible, or `None` if the
     /// given field does not exist or does not have a type matching the supplied type.
-    fn field_dyn_mut(&mut self, _id: FieldId) -> Option<&mut any::Any> {
+    fn field_any_mut(&mut self, _id: FieldId) -> Option<&mut any::Any> {
         None
     }
 }

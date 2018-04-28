@@ -68,9 +68,9 @@ fn impl_type_info(mut ast: syn::DeriveInput) -> quote::Tokens {
     let tokens = &type_info.tokens;
 
     let field_fn = build_field_fn(&type_info);
-    let field_dyn_fn = build_field_dyn_fn(&type_info);
+    let field_any_fn = build_field_any_fn(&type_info);
     let field_mut_fn = build_field_mut_fn(&type_info);
-    let field_dyn_mut_fn = build_field_dyn_mut_fn(&type_info);
+    let field_any_mut_fn = build_field_any_mut_fn(&type_info);
 
     quote! {
         impl #impl_generics ::type_info::TypeInfo for #ident #ty_generics #where_clause {
@@ -84,8 +84,8 @@ fn impl_type_info(mut ast: syn::DeriveInput) -> quote::Tokens {
                 &<Self as ::type_info::TypeInfo>::TYPE
             }
 
-            #field_dyn_fn
-            #field_dyn_mut_fn
+            #field_any_fn
+            #field_any_mut_fn
         }
     }
 }
@@ -168,7 +168,7 @@ fn build_field_mut_fn(type_info: &MetaType) -> quote::Tokens {
     }
 }
 
-fn build_field_dyn_fn(type_info: &MetaType) -> quote::Tokens {
+fn build_field_any_fn(type_info: &MetaType) -> quote::Tokens {
     let meta_fields = meta_fields(&type_info);
 
     if meta_fields.is_empty() {
@@ -190,7 +190,7 @@ fn build_field_dyn_fn(type_info: &MetaType) -> quote::Tokens {
         });
 
         quote! {
-            fn field_dyn(&self, id: ::type_info::FieldId) -> ::std::option::Option<&::std::any::Any> {
+            fn field_any(&self, id: ::type_info::FieldId) -> ::std::option::Option<&::std::any::Any> {
                 match id {
                     #(#fields)*
                     _ => ::std::option::Option::None,
@@ -200,7 +200,7 @@ fn build_field_dyn_fn(type_info: &MetaType) -> quote::Tokens {
     }
 }
 
-fn build_field_dyn_mut_fn(type_info: &MetaType) -> quote::Tokens {
+fn build_field_any_mut_fn(type_info: &MetaType) -> quote::Tokens {
     let meta_fields = meta_fields(&type_info);
 
     if meta_fields.is_empty() {
@@ -222,7 +222,7 @@ fn build_field_dyn_mut_fn(type_info: &MetaType) -> quote::Tokens {
         });
 
         quote! {
-            fn field_dyn_mut(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut ::std::any::Any> {
+            fn field_any_mut(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut ::std::any::Any> {
                 match id {
                     #(#fields)*
                     _ => ::std::option::Option::None,
