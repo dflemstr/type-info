@@ -60,6 +60,11 @@ enum MetaFieldId<'a> {
 
 struct MetaVariantId(syn::Ident);
 
+enum MetaBorrow {
+    Ref,
+    Mut,
+}
+
 /// Derive the `TypeInfo` and `DynamicTypeInfo` traits for a given type.
 #[proc_macro_derive(TypeInfo, attributes(type_info))]
 pub fn type_info(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
@@ -110,79 +115,239 @@ fn impl_type_info(mut ast: syn::DeriveInput) -> quote::Tokens {
 }
 
 fn build_field_fn(type_info: &MetaType) -> quote::Tokens {
-    let meta_fields = meta_fields(&type_info);
-
-    if meta_fields.is_empty() {
-        quote!()
-    } else {
-        let fields = meta_fields.iter().map(|f| match f.id {
-            MetaFieldId::Unnamed(ref i) => {
-                let i_usize = i.index as usize;
-                quote! {
-                    ::type_info::FieldId::Unnamed(#i_usize) => {
-                        ::std::any::Any::downcast_ref::<TypeInfoA>(&self.#i)
-                    }
-                }
-            }
-            MetaFieldId::Named(i) => {
-                let i_str = i.as_ref();
-                quote! {
-                    ::type_info::FieldId::Named(#i_str) => {
-                        ::std::any::Any::downcast_ref::<TypeInfoA>(&self.#i)
-                    }
-                }
-            }
-        });
-
+    build_field_fn_body(
+        type_info,
+        |a| quote!({::std::any::Any::downcast_ref::<TypeInfoA>(#a)}),
+        MetaBorrow::Ref,
+    ).map(|body| {
         quote! {
             fn field<TypeInfoA>(&self, id: ::type_info::FieldId) -> ::std::option::Option<&TypeInfoA>
             where
                 TypeInfoA: ::std::any::Any,
             {
-                match id {
-                    #(#fields)*
-                    _ => ::std::option::Option::None,
-                }
+                #body
             }
         }
-    }
+    })
+        .unwrap_or(quote!())
 }
 
 fn build_field_mut_fn(type_info: &MetaType) -> quote::Tokens {
-    let meta_fields = meta_fields(&type_info);
-
-    if meta_fields.is_empty() {
-        quote!()
-    } else {
-        let fields = meta_fields.iter().map(|f| match f.id {
-            MetaFieldId::Unnamed(ref i) => {
-                let i_usize = i.index as usize;
-                quote! {
-                    ::type_info::FieldId::Unnamed(#i_usize) => {
-                        ::std::any::Any::downcast_mut::<TypeInfoA>(&mut self.#i)
-                    }
-                }
-            }
-            MetaFieldId::Named(i) => {
-                let i_str = i.as_ref();
-                quote! {
-                    ::type_info::FieldId::Named(#i_str) => {
-                        ::std::any::Any::downcast_mut::<TypeInfoA>(&mut self.#i)
-                    }
-                }
-            }
-        });
-
+    build_field_fn_body(
+        type_info,
+        |a| quote!({::std::any::Any::downcast_mut::<TypeInfoA>(#a)}),
+        MetaBorrow::Mut,
+    ).map(|body| {
         quote! {
             fn field_mut<TypeInfoA>(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut TypeInfoA>
             where
                 TypeInfoA: ::std::any::Any,
             {
-                match id {
-                    #(#fields)*
-                    _ => ::std::option::Option::None,
-                }
+                #body
             }
+        }
+    })
+        .unwrap_or(quote!())
+}
+
+fn build_field_any_fn(type_info: &MetaType) -> quote::Tokens {
+    build_field_fn_body(
+        type_info,
+        |a| quote!(::std::option::Option::Some(#a),),
+        MetaBorrow::Ref,
+    ).map(|body| {
+        quote! {
+            fn field_any(&self, id: ::type_info::FieldId) -> ::std::option::Option<&::std::any::Any> {
+                #body
+            }
+        }
+    })
+        .unwrap_or(quote!())
+}
+
+fn build_field_any_mut_fn(type_info: &MetaType) -> quote::Tokens {
+    build_field_fn_body(
+        type_info,
+        |a| quote!(::std::option::Option::Some(#a),),
+        MetaBorrow::Mut,
+    ).map(|body| {
+        quote! {
+            fn field_any_mut(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut ::std::any::Any> {
+                #body
+            }
+        }
+    })
+        .unwrap_or(quote!())
+}
+
+fn build_field_fn_body<A>(
+    type_info: &MetaType,
+    accessor_builder: A,
+    meta_borrow: MetaBorrow,
+) -> Option<quote::Tokens>
+where
+    A: FnMut(quote::Tokens) -> quote::Tokens,
+{
+    if let Some(ref variants) = type_info.data.variants {
+        if variants.iter().all(|v| v.fields.fields.is_empty()) {
+            None
+        } else {
+            Some(build_field_fn_body_from_variants(
+                &type_info.ident,
+                variants,
+                accessor_builder,
+                meta_borrow,
+            ))
+        }
+    } else if let Some(MetaFields { ref fields, .. }) = type_info.data.fields {
+        if fields.is_empty() {
+            None
+        } else {
+            Some(build_field_fn_body_from_fields(
+                fields,
+                accessor_builder,
+                meta_borrow,
+            ))
+        }
+    } else {
+        None
+    }
+}
+
+fn build_field_fn_body_from_fields<A>(
+    meta_fields: &[MetaField],
+    mut accessor_builder: A,
+    meta_borrow: MetaBorrow,
+) -> quote::Tokens
+where
+    A: FnMut(quote::Tokens) -> quote::Tokens,
+{
+    let fields = meta_fields.iter().map(|f| match f.id {
+        MetaFieldId::Unnamed(ref i) => {
+            let i_usize = i.index as usize;
+            let accessor = accessor_builder(match meta_borrow {
+                MetaBorrow::Ref => quote!(&self.#i),
+                MetaBorrow::Mut => quote!(&mut self.#i),
+            });
+
+            quote! {
+                ::type_info::FieldId::Unnamed(#i_usize) => #accessor
+            }
+        }
+        MetaFieldId::Named(i) => {
+            let i_str = i.as_ref();
+            let accessor = accessor_builder(match meta_borrow {
+                MetaBorrow::Ref => quote!(&self.#i),
+                MetaBorrow::Mut => quote!(&mut self.#i),
+            });
+
+            quote! {
+                ::type_info::FieldId::Named(#i_str) => #accessor
+            }
+        }
+    });
+
+    quote! {
+        match id {
+            #(#fields)*
+            _ => ::std::option::Option::None,
+        }
+    }
+}
+
+fn build_field_fn_body_from_variants<A>(
+    type_ident: &syn::Ident,
+    meta_variants: &[MetaVariant],
+    mut accessor_builder: A,
+    meta_borrow: MetaBorrow,
+) -> quote::Tokens
+where
+    A: FnMut(quote::Tokens) -> quote::Tokens,
+{
+    let variants = meta_variants.iter().map(|v| {
+        let ident = v.id.0;
+        let meta_fields = &v.fields.fields;
+
+        let syn_idents = (0..meta_fields.len())
+            .map(|idx| syn::Ident::from(format!("_{}", idx).as_str()))
+            .collect::<Vec<_>>();
+        let pat_syn_idents = syn_idents.iter().map(|ident| match meta_borrow {
+            MetaBorrow::Ref => quote!(ref #ident),
+            MetaBorrow::Mut => quote!(ref mut #ident),
+        });
+
+        match v.fields.kind {
+            MetaFieldsKind::Unit => quote! { #type_ident::#ident => ::std::option::Option::None, },
+            MetaFieldsKind::Unnamed(_) => {
+                let body = build_field_fn_variant_field_match(
+                    meta_fields,
+                    &syn_idents,
+                    &mut accessor_builder,
+                );
+
+                quote! { #type_ident::#ident(#(#pat_syn_idents,)*) => #body }
+            }
+            MetaFieldsKind::Named(_) => {
+                let pat_idents = meta_fields.iter().map(|f| match f.id {
+                    MetaFieldId::Named(ident) => ident,
+                    _ => unreachable!(),
+                });
+                let body = build_field_fn_variant_field_match(
+                    meta_fields,
+                    &syn_idents,
+                    &mut accessor_builder,
+                );
+
+                quote! { #type_ident::#ident { #(#pat_idents: #pat_syn_idents,)* } => #body }
+            }
+        }
+    });
+
+    quote! {
+        match *self {
+            #(#variants)*
+        }
+    }
+}
+
+fn build_field_fn_variant_field_match<A>(
+    meta_fields: &[MetaField],
+    syn_idents: &[syn::Ident],
+    mut accessor_builder: A,
+) -> quote::Tokens
+where
+    A: FnMut(quote::Tokens) -> quote::Tokens,
+{
+    if meta_fields.is_empty() {
+        quote!(::std::option::Option::None,)
+    } else {
+        let fields = meta_fields
+            .iter()
+            .zip(syn_idents)
+            .map(|(f, syn_ident)| match f.id {
+                MetaFieldId::Unnamed(ref i) => {
+                    let i_usize = i.index as usize;
+                    let accessor = accessor_builder(quote!(#syn_ident));
+
+                    quote! {
+                        ::type_info::FieldId::Unnamed(#i_usize) => #accessor
+                    }
+                }
+                MetaFieldId::Named(i) => {
+                    let i_str = i.as_ref();
+                    let accessor = accessor_builder(quote!(#syn_ident));
+
+                    quote! {
+                        ::type_info::FieldId::Named(#i_str) => #accessor
+                    }
+                }
+            });
+
+        quote! {
+            match id {
+                #(#fields)*
+                _ => ::std::option::Option::None,
+            },
         }
     }
 }
@@ -195,12 +360,14 @@ fn build_variant_fn(type_info: &MetaType) -> quote::Tokens {
                 let ident = v.id.0;
                 let ident_str = ident.as_ref();
                 match v.fields.kind {
-                    MetaFieldsKind::Unit => quote! { #type_ident::#ident => Some(#ident_str), },
+                    MetaFieldsKind::Unit => {
+                        quote! { #type_ident::#ident => ::std::option::Option::Some(#ident_str), }
+                    }
                     MetaFieldsKind::Unnamed(_) => {
-                        quote! { #type_ident::#ident( .. ) => Some(#ident_str), }
+                        quote! { #type_ident::#ident( .. ) => ::std::option::Option::Some(#ident_str), }
                     }
                     MetaFieldsKind::Named(_) => {
-                        quote! { #type_ident::#ident { .. } => Some(#ident_str), }
+                        quote! { #type_ident::#ident { .. } => ::std::option::Option::Some(#ident_str), }
                     }
                 }
             });
@@ -215,79 +382,6 @@ fn build_variant_fn(type_info: &MetaType) -> quote::Tokens {
         }
         _ => quote!(),
     }
-}
-
-fn build_field_any_fn(type_info: &MetaType) -> quote::Tokens {
-    let meta_fields = meta_fields(&type_info);
-
-    if meta_fields.is_empty() {
-        quote!()
-    } else {
-        let fields = meta_fields.iter().map(|f| match f.id {
-            MetaFieldId::Unnamed(ref i) => {
-                let i_usize = i.index as usize;
-                quote! {
-                    ::type_info::FieldId::Unnamed(#i_usize) => Some(&self.#i),
-                }
-            }
-            MetaFieldId::Named(i) => {
-                let i_str = i.as_ref();
-                quote! {
-                    ::type_info::FieldId::Named(#i_str) => Some(&self.#i),
-                }
-            }
-        });
-
-        quote! {
-            fn field_any(&self, id: ::type_info::FieldId) -> ::std::option::Option<&::std::any::Any> {
-                match id {
-                    #(#fields)*
-                    _ => ::std::option::Option::None,
-                }
-            }
-        }
-    }
-}
-
-fn build_field_any_mut_fn(type_info: &MetaType) -> quote::Tokens {
-    let meta_fields = meta_fields(&type_info);
-
-    if meta_fields.is_empty() {
-        quote!()
-    } else {
-        let fields = meta_fields.iter().map(|f| match f.id {
-            MetaFieldId::Unnamed(ref i) => {
-                let i_usize = i.index as usize;
-                quote! {
-                    ::type_info::FieldId::Unnamed(#i_usize) => Some(&mut self.#i),
-                }
-            }
-            MetaFieldId::Named(i) => {
-                let i_str = i.as_ref();
-                quote! {
-                    ::type_info::FieldId::Named(#i_str) => Some(&mut self.#i),
-                }
-            }
-        });
-
-        quote! {
-            fn field_any_mut(&mut self, id: ::type_info::FieldId) -> ::std::option::Option<&mut ::std::any::Any> {
-                match id {
-                    #(#fields)*
-                    _ => ::std::option::Option::None,
-                }
-            }
-        }
-    }
-}
-
-fn meta_fields<'a>(type_info: &'a MetaType) -> &'a [MetaField<'a>] {
-    type_info
-        .data
-        .fields
-        .as_ref()
-        .map(|f| f.fields.as_slice())
-        .unwrap_or_else(|| &[])
 }
 
 fn add_static(generics: &mut syn::Generics) {
@@ -514,7 +608,7 @@ fn build_field(idx: usize, field: &syn::Field) -> MetaField {
             let tokens = quote! {
                 ::type_info::Field {
                     id: ::type_info::FieldId::Named(#ident_str),
-                    ident: Some(#ident_str),
+                    ident: ::std::option::Option::Some(#ident_str),
                     ty: <#ty as ::type_info::TryTypeInfo>::TRY_TYPE,
                 }
             };
@@ -527,7 +621,7 @@ fn build_field(idx: usize, field: &syn::Field) -> MetaField {
             let tokens = quote! {
                 ::type_info::Field {
                     id: ::type_info::FieldId::Unnamed( #idx),
-                    ident: None,
+                    ident: ::std::option::Option::None,
                     ty: <#ty as::type_info::TryTypeInfo >::TRY_TYPE,
                 }
             };
