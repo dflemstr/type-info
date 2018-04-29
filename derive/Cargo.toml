@@ -6,7 +6,7 @@ keywords = ["reflection", "type", "metaclass", "meta", "introspection"]
 license = "MIT"
 name = "type-info-derive"
 repository = "https://github.com/dflemstr/type-info"
-version = "0.1.0"
+version = "0.2.0"
 
 [dependencies]
 proc-macro2 = "0.3.6"
