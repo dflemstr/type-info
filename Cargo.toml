@@ -12,3 +12,6 @@ version = "0.1.0"
 
 [workspace]
 members = ["derive", "example"]
+
+[dev-dependencies]
+type-info-derive = { path = "derive", version = "0.1.0" }

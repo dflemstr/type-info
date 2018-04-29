@@ -2,7 +2,108 @@
 //!
 //! This library provides simple access to type information at runtime, as well as the ability to
 //! manipulate data whose type is not statically known.
-#![feature(const_fn)]
+//!
+//! # Type information
+//!
+//! By deriving the `TypeInfo` trait, you get access to type information about the type at runtime.
+//!
+//! ```
+//! #![feature(const_type_id)]
+//!
+//! extern crate type_info;
+//! #[macro_use]
+//! extern crate type_info_derive;
+//!
+//! use type_info::TypeInfo;
+//!
+//! #[derive(TypeInfo)]
+//! struct Person {
+//!     name: String,
+//!     age: u32,
+//! }
+//!
+//! fn main() {
+//!     let ty = Person::TYPE;
+//!
+//!     assert_eq!("Person", ty.ident);
+//!     assert_eq!(vec!["name", "age"], ty.fields().iter().map(|f| f.ident.unwrap()).collect::<Vec<_>>());
+//! }
+//! ```
+//!
+//! # Static dispatch
+//!
+//! This example shows how to use the main `TypeInfo` trait with generic parameters (i.e. not trait
+//! objects):
+//!
+//! ```
+//! # #![feature(const_type_id)]
+//! #
+//! # extern crate type_info;
+//! # #[macro_use]
+//! # extern crate type_info_derive;
+//! #
+//! # #[derive(TypeInfo)]
+//! # struct Person {
+//! #     name: String,
+//! #     age: u32,
+//! # }
+//! // Person is defined like in the above example...
+//!
+//! // A function that can take any type that has a field called "name" of type String.
+//! fn add_smith_to_name<A>(anything: &mut A) where A: type_info::TypeInfo {
+//!     let name = anything.field_mut::<String>(type_info::FieldId::Named("name")).unwrap();
+//!     name.push_str(" Smith");
+//! }
+//!
+//! fn main() {
+//!     let mut person = Person {
+//!         name: "Lisa".to_owned(),
+//!         age: 23,
+//!     };
+//!
+//!     add_smith_to_name(&mut person);
+//!
+//!     assert_eq!("Lisa Smith", person.name.as_str());
+//! }
+//! ```
+//!
+//! # Dynamic dispatch
+//!
+//! This example shows how to use the `DynamicTypeInfo` trait when you don't want to introduce a
+//! type parameter to specialize a function, but instead prefer to use a trait object:
+//!
+//! ```
+//! # #![feature(const_type_id)]
+//! #
+//! # extern crate type_info;
+//! # #[macro_use]
+//! # extern crate type_info_derive;
+//! #
+//! # #[derive(TypeInfo)]
+//! # struct Person {
+//! #     name: String,
+//! #     age: u32,
+//! # }
+//! // Person is defined like in the above example...
+//!
+//! // A function that can take any type that has a field called "name" of type String.
+//! fn add_smith_to_name(anything: &mut type_info::DynamicTypeInfo) {
+//!     let field = anything.field_any_mut(type_info::FieldId::Named("name")).unwrap();
+//!     let name = field.downcast_mut::<String>().unwrap();
+//!     name.push_str(" Smith");
+//! }
+//!
+//! fn main() {
+//!     let mut person = Person {
+//!         name: "Lisa".to_owned(),
+//!         age: 23,
+//!     };
+//!
+//!     add_smith_to_name(&mut person);
+//!
+//!     assert_eq!("Lisa Smith", person.name.as_str());
+//! }
+//! ```
 #![feature(const_type_id)]
 #![feature(specialization)]
 #![deny(
@@ -200,6 +301,36 @@ pub struct Field {
     pub ident: Option<&'static str>,
     /// The type of the field, if it has any associated `TypeInfo`.
     pub ty: Option<&'static Type>,
+}
+
+impl Type {
+    /// Convenience method for getting all of the struct fields of this type.
+    pub fn fields(&self) -> &'static [Field] {
+        match self.data {
+            Data::Struct(DataStruct { ref fields, .. }) => fields.fields(),
+            _ => &[],
+        }
+    }
+
+    /// Convenience method for getting all of the enum variants of this type.
+    pub fn variants(&self) -> &'static [Variant] {
+        match self.data {
+            Data::Enum(DataEnum { ref variants, .. }) => variants,
+            _ => &[],
+        }
+    }
+}
+
+impl Fields {
+    /// Convenience method for getting all of the fields, ignoring whether they are named or
+    /// unnamed.
+    pub fn fields(&self) -> &'static [Field] {
+        match *self {
+            Fields::Unit => &[],
+            Fields::Named(FieldsNamed { named, .. }) => named,
+            Fields::Unnamed(FieldsUnnamed { unnamed, .. }) => unnamed,
+        }
+    }
 }
 
 impl<'a> fmt::Display for FieldId<'a> {
