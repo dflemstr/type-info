@@ -1,0 +1,1 @@
+pre-release-replacements = [{file = "derive/Cargo.toml", search = "[dependencies.type-info]\nversion = \"[a-z0-9\\.-]+\"", replace = "[dependencies.type-info]\nversion = \"{{version}}\""}]
