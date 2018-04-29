@@ -14,7 +14,7 @@ quote = "0.5.1"
 syn = "0.13.1"
 
 [dependencies.type-info]
-version = "0.1.0"
+version = "0.2.0"
 path = ".."
 
 [dev-dependencies]
