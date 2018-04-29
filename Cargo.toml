@@ -6,7 +6,7 @@ keywords = ["reflection", "type", "metaclass", "meta", "introspection"]
 license = "MIT"
 name = "type-info"
 repository = "https://github.com/dflemstr/type-info"
-version = "0.2.0"
+version = "0.2.1"
 
 [dependencies]
 
@@ -14,4 +14,4 @@ version = "0.2.0"
 members = ["derive", "example"]
 
 [dev-dependencies]
-type-info-derive = { path = "derive", version = "0.1.0" }
+type-info-derive = { path = "derive", version = "0.2.0" }
