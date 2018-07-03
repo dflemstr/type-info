@@ -103,8 +103,8 @@ fn impl_type_info(mut ast: syn::DeriveInput) -> quote::Tokens {
         }
 
         impl #impl_generics ::type_info::DynamicTypeInfo for #ident #ty_generics #where_clause {
-            fn type_ref(&self) -> &'static ::type_info::Type {
-                &<Self as ::type_info::TypeInfo>::TYPE
+            fn type_ref(&self) -> ::type_info::Type {
+                <Self as ::type_info::TypeInfo>::TYPE
             }
 
             #variant_fn

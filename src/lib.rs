@@ -159,7 +159,7 @@ pub trait TypeInfo: DynamicTypeInfo {
 /// This trait is built to be compatible with being a trait object.
 pub trait DynamicTypeInfo {
     /// The dynamic statically known type information for this type.
-    fn type_ref(&self) -> &'static Type;
+    fn type_ref(&self) -> Type;
 
     /// Get the id of the currently active variant of this type, or `None` if the type is not
     /// an `enum`.
@@ -189,18 +189,18 @@ pub trait DynamicTypeInfo {
 pub trait TryTypeInfo {
     /// The constant statically known type information for this type, or `None` if the type does not
     /// implement `TypeInfo`.
-    const TRY_TYPE: Option<&'static Type>;
+    const TRY_TYPE: Option<Type>;
 }
 
 impl<T> TryTypeInfo for T {
-    default const TRY_TYPE: Option<&'static Type> = None;
+    default const TRY_TYPE: Option<Type> = None;
 }
 
 impl<T> TryTypeInfo for T
 where
     T: TypeInfo,
 {
-    const TRY_TYPE: Option<&'static Type> = Some(&T::TYPE);
+    const TRY_TYPE: Option<Type> = Some(T::TYPE);
 }
 
 /// Type information for a type that implements `TypeInfo`.
@@ -300,7 +300,7 @@ pub struct Field {
     /// The field's identifier, if it is named.
     pub ident: Option<&'static str>,
     /// The type of the field, if it has any associated `TypeInfo`.
-    pub ty: Option<&'static Type>,
+    pub ty: Option<Type>,
 }
 
 impl Type {
@@ -354,8 +354,8 @@ macro_rules! impl_primitive {
         }
 
         impl DynamicTypeInfo for $t {
-            fn type_ref(&self) -> &'static Type {
-                &<Self as TypeInfo>::TYPE
+            fn type_ref(&self) -> Type {
+                <Self as TypeInfo>::TYPE
             }
         }
     };
